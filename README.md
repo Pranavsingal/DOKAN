@@ -115,15 +115,6 @@ Empower India’s 13M+ small retailers with accessible digital tools.
 Build a simple, scalable platform to modernize Indian retail — one *dukaan* at a time.
 
 ---
-
-## 👥 Team
-
-* **Pranav Singal** – Frontend & Backend
-* **Ankit Choudhary** – AI & ML Systems
-* **Ranvir Tyagi** – Frontend Integration & Content
-
----
-
 ## 📜 License
 
 This project is licensed under the **MIT License** — open to use and modify freely.
