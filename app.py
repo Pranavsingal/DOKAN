@@ -70,26 +70,15 @@ def billing():
     if request.method == 'POST':
         product_id = request.form['product_id']
         quantity = int(request.form['quantity'])
-        
-        items = read_csv(CSV_FILE)
-        
         for item in items:
             if item['id'] == product_id:
-                current_stock = float(item['stock'])
-                
-                if current_stock >= quantity:
-                   
-                    price = float(item['price']) * quantity
-                    item['stock'] = current_stock - quantity
-
-                    cart.append((item['name'], quantity, price))
-                    total += price
-
-                    write_csv(CSV_FILE, items)
-                else:
-                    print(f"Error: Not enough stock for {item['name']}")
-                
+                price = float(item['price']) * quantity
+                cart.append((item['name'], quantity, price))
+                total += price
                 break
+
+    return render_template('billing.html', items=items, cart=cart, total=total)
+
 
 @app.route('/delete/<item_id>')
 def delete_item(item_id):
