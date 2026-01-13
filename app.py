@@ -90,6 +90,7 @@ def billing():
                     print(f"Error: Not enough stock for {item['name']}")
                 
                 break
+    return render_template('billing.html', items=items, cart=cart, total=total)
 
 @app.route('/delete/<item_id>')
 def delete_item(item_id):
@@ -131,3 +132,4 @@ def dashboard():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
