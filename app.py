@@ -5,8 +5,35 @@ from ai.stockout_predictor import predict_stockout
 from ai.recommender import recommend_products
 from ai.categorizer import categorize_product
 from ai.sentiment_analyzer import analyze_feedback
+from flask_login import UserMixin, LoginManager, login_user, logout_user, login_required, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret-key-goes-here'  # Required for Login
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
 CSV_FILE = 'data/inventory.csv'
 SALES_FILE = 'data/sales.csv'
 FEEDBACK_FILE = 'data/feedback.csv'
@@ -31,7 +58,7 @@ def home():
 
 
 @app.route('/inventory', methods=['GET', 'POST'])
-@app.route('/inventory', methods=['GET', 'POST'])
+@login_required
 def inventory():
     items = read_csv(CSV_FILE)
 
@@ -62,6 +89,7 @@ def inventory():
 
 
 @app.route('/billing', methods=['GET', 'POST'])
+@login_required
 def billing():
     items = read_csv(CSV_FILE)
     cart = []
@@ -110,6 +138,7 @@ def feedback():
 
 
 @app.route('/dashboard')
+@login_required
 def dashboard():
     items = read_csv(CSV_FILE)
     sales_data = read_csv(SALES_FILE)
@@ -128,7 +157,48 @@ def dashboard():
                            stockout_predictions=stockout_predictions,
                            sales_forecast=sales_forecast)
 
+# --- Authentication Routes ---
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        # Check if user already exists
+        if User.query.filter_by(username=username).first():
+            return "User already exists! <a href='/register'>Try again</a>"
+        
+        # Create new user
+        new_user = User(username=username)
+        new_user.set_password(password)
+        db.session.add(new_user)
+        db.session.commit()
+        
+        return redirect(url_for('login'))
+        
+    return render_template('register.html')
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        
+        if user and user.check_password(password):
+            login_user(user)
+            return redirect(url_for('dashboard'))
+            
+        return "Invalid credentials! <a href='/login'>Try again</a>"
+        
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+# -----------------------------
 
 if __name__ == '__main__':
     app.run(debug=True)
