@@ -3,16 +3,39 @@
 {% block content %}
 
 <!-- Add New Product / Update Existing Product -->
-<form method="POST">
+<form action="{{ url_for('inventory') }}" method="POST">
   <h2>🛒 Inventory Management</h2>
-  <input type="text" name="id" placeholder="Product ID" required>
-  <input type="text" name="name" placeholder="Product Name" required>
-  <input type="text" name="category" placeholder="Category" required>
-  <input type="number" name="stock" placeholder="Stock" required>
-  <input type="number" name="price" placeholder="Price" required>
-  <input type="date" name="expiry_date" placeholder="Expiry Date">
-  <input type="text" name="supplier" placeholder="Supplier" required>
-  <button type="submit">+ Add Product</button>
+  <div class="form-row">
+      <input type="text" name="id" class="form-control" placeholder="Product ID" 
+             value="{{ edit_item.id if edit_item else '' }}" required {{ 'readonly' if edit_item else '' }}>
+             
+      <input type="text" name="name" class="form-control" placeholder="Product Name" 
+             value="{{ edit_item.name if edit_item else '' }}" required>
+  </div>
+  <div class="form-row">
+      <input type="text" name="category" class="form-control" placeholder="Category" 
+             value="{{ edit_item.category if edit_item else '' }}" required>
+      
+      <input type="number" name="stock" class="form-control" placeholder="Stock" 
+             value="{{ edit_item.stock if edit_item else '' }}" required min="0">
+  </div>
+  <div class="form-row">
+      <input type="number" name="price" class="form-control" placeholder="Price" 
+             value="{{ edit_item.price if edit_item else '' }}" required min="0" step="0.01">
+      
+      <input type="date" name="expiry_date" class="form-control" placeholder="Expiry Date"
+             value="{{ edit_item.expiry_date if edit_item else '' }}">
+  </div>
+  <input type="text" name="supplier" class="form-control" placeholder="Supplier" 
+         value="{{ edit_item.supplier if edit_item else '' }}" required>
+         
+  <button type="submit" class="btn-primary">
+      {{ 'Update Product' if edit_item else '+ Add Product' }}
+  </button>
+  
+  {% if edit_item %}
+    <a href="{{ url_for('inventory') }}" style="margin-left: 10px;">Cancel Edit</a>
+  {% endif %}
 </form>
 
 <!-- Display Inventory -->
@@ -40,7 +63,13 @@
       <td>{{ item.price }}</td>
       <td>{{ item.expiry_date }}</td>
       <td>{{ item.supplier }}</td>
-      <td><a href="{{ url_for('delete_item', item_id=item.id) }}">Delete</a></td>
+      <td>
+          <a href="{{ url_for('edit_product', item_id=item.id) }}" style="color: blue; margin-right: 10px;">Edit</a>
+          
+          <a href="{{ url_for('delete_item', item_id=item.id) }}" 
+             onclick="return confirm('Are you sure you want to delete this item?');"
+             style="color: red;">Delete</a>
+      </td>
     </tr>
     {% endfor %}
   </tbody>

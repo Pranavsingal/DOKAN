@@ -92,6 +92,15 @@ def billing():
                 break
     return render_template('billing.html', items=items, cart=cart, total=total)
 
+@app.route('/edit_product/<item_id>')
+def edit_product(item_id):
+    items = read_csv(CSV_FILE)
+    # Find the specific item to edit
+    item_to_edit = next((item for item in items if item['id'] == item_id), None)
+    
+    # Render the inventory page, but pass the item we want to edit
+    return render_template('inventory.html', items=items, edit_item=item_to_edit)
+
 @app.route('/delete/<item_id>')
 def delete_item(item_id):
     data = read_csv(CSV_FILE)
