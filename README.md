@@ -70,6 +70,16 @@ Dokan offers a modern, intuitive platform that simplifies operations:
 * 🔻 **30% reduction** in stockouts
 * 🔼 **15% revenue increase**
 * ⏱️ **50% reduction** in billing time
+  
+---
+
+## 👨‍💻 My Role & Contributions
+
+- Designed and implemented the Flask backend architecture
+- Developed inventory and billing logic with real-time updates
+- Integrated AI modules for analytics and prediction
+- Handled CSV-based data management using Pandas
+- Built and connected frontend templates with backend APIs
 
 ---
 
@@ -81,6 +91,45 @@ Dokan offers a modern, intuitive platform that simplifies operations:
 | **Backend**   | Python, Flask                               |
 | **Database**  | CSV files handled with Pandas               |
 | **AI Module** | Python, Pandas, scikit-learn                |
+
+---
+
+## 🧠 System Architecture
+
+Dokan follows a modular backend-first architecture designed for simplicity and scalability:
+
+- **Flask Backend** handles routing, authentication, business logic, and API responses
+- **CSV + Pandas Layer** is used for lightweight data storage and fast prototyping during hackathon development
+- **AI Module** processes sales and customer data to generate insights and predictions
+- **Template-based Frontend** renders dynamic data using Flask and JavaScript
+
+This separation of concerns allows easy migration to a relational database (MySQL/PostgreSQL) and REST-based frontend in future iterations.
+
+---
+
+## 🤖 AI & Data Intelligence
+
+Dokan integrates machine learning to enhance decision-making for store owners:
+
+- **Sales Trend Analysis** using historical billing data
+- **Demand Prediction** for frequently sold products
+- **Customer Sentiment Insights** based on feedback data
+- **Data Preprocessing & Feature Engineering** using Pandas
+- **Modeling** using scikit-learn for lightweight prediction tasks
+
+The AI pipeline was designed to be efficient, interpretable, and suitable for small retail datasets.
+
+---
+
+## 📂 Data Storage Design Choice
+
+CSV-based storage was intentionally used during hackathon development to:
+
+- Enable fast iteration without database setup overhead
+- Ensure portability and ease of deployment
+- Allow quick data analysis using Pandas
+
+The system architecture supports seamless migration to MySQL or PostgreSQL for production-scale deployment.
 
 ---
 
