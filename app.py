@@ -63,16 +63,31 @@ def inventory():
     items = read_csv(CSV_FILE)
 
     if request.method == 'POST':
+        # 1. Capture and Validate Inputs
+        try:
+            stock = int(request.form['stock'])
+            price = float(request.form['price'])
+            
+            # --- THE FIX: Block negative numbers ---
+            if stock < 0 or price < 0:
+                return "Error: Stock and Price cannot be negative! <a href='/inventory'>Go Back</a>"
+            # ---------------------------------------
+
+        except ValueError:
+            return "Error: Invalid number format! <a href='/inventory'>Go Back</a>"
+
+        # 2. Create the item (if validation passes)
         item = {
             'id': request.form['id'],
             'name': request.form['name'],
             'category': request.form['category'],
-            'stock': request.form['stock'],
-            'price': request.form['price'],
+            'stock': stock,       # Use the validated variable
+            'price': price,       # Use the validated variable
             'expiry_date': request.form['expiry_date'],
             'supplier': request.form['supplier']
         }
 
+        # 3. Save to CSV
         data = read_csv(CSV_FILE)
         for i, row in enumerate(data):
             if row['id'] == item['id']:
