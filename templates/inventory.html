@@ -40,7 +40,13 @@
       <td>{{ item.price }}</td>
       <td>{{ item.expiry_date }}</td>
       <td>{{ item.supplier }}</td>
-      <td><a href="{{ url_for('delete_item', item_id=item.id) }}">Delete</a></td>
+      <td>
+          <a href="{{ url_for('delete_item', item_id=item.id) }}" 
+            onclick="return confirm('Are you sure you want to delete this item?');"
+            style="color: red; font-weight: bold;">
+            Delete
+          </a>
+      </td>
     </tr>
     {% endfor %}
   </tbody>
