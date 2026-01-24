@@ -5,14 +5,22 @@
 <!-- Add New Product / Update Existing Product -->
 <form method="POST">
   <h2>🛒 Inventory Management</h2>
-  <input type="text" name="id" placeholder="Product ID" required>
-  <input type="text" name="name" placeholder="Product Name" required>
-  <input type="text" name="category" placeholder="Category" required>
-  <input type="number" name="stock" placeholder="Stock" required>
-  <input type="number" name="price" placeholder="Price" required>
-  <input type="date" name="expiry_date" placeholder="Expiry Date">
-  <input type="text" name="supplier" placeholder="Supplier" required>
-  <button type="submit">+ Add Product</button>
+  <div class="form-row">
+      <input type="text" name="id" class="form-control" placeholder="Product ID" required>
+      <input type="text" name="name" class="form-control" placeholder="Product Name" required>
+  </div>
+  <div class="form-row">
+      <input type="text" name="category" class="form-control" placeholder="Category" required>
+      
+      <input type="number" name="stock" class="form-control" placeholder="Stock" required min="0">
+  </div>
+  <div class="form-row">
+      <input type="number" name="price" class="form-control" placeholder="Price" required min="0" step="0.01">
+      
+      <input type="date" name="expiry_date" class="form-control" placeholder="Expiry Date">
+  </div>
+  <input type="text" name="supplier" class="form-control" placeholder="Supplier" required>
+  <button type="submit" class="btn-primary">+ Add Product</button>
 </form>
 
 <!-- Display Inventory -->
