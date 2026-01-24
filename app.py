@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for
 import csv
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, LoginManager, login_user, logout_user, login_required, current_user
@@ -11,7 +11,7 @@ db = SQLAlchemy(app)
 
 CSV_FILE = 'data/inventory.csv'
 
-# --- 1. Login & User Setup (From PR #9) ---
+# --- 1. Login Setup ---
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -41,8 +41,7 @@ def read_csv(file_path):
 
 def write_csv(file_path, data):
     if not data:
-        with open(file_path, mode='w', newline='') as file:
-            return
+        return
     with open(file_path, mode='w', newline='') as file:
         writer = csv.DictWriter(file, fieldnames=data[0].keys())
         writer.writeheader()
@@ -87,12 +86,12 @@ def logout():
     return redirect(url_for('login'))
 
 @app.route('/inventory', methods=['GET', 'POST'])
-@login_required  # Auth Protection (PR #9)
+@login_required
 def inventory():
     items = read_csv(CSV_FILE)
 
     if request.method == 'POST':
-        # Validation Logic (PR #10)
+        # Validation Logic
         try:
             stock = int(request.form['stock'])
             price = float(request.form['price'])
@@ -111,7 +110,7 @@ def inventory():
             'supplier': request.form['supplier']
         }
 
-        # Edit/Update Logic (PR #13)
+        # Edit/Update Logic
         data = read_csv(CSV_FILE)
         for i, row in enumerate(data):
             if row['id'] == item['id']:
@@ -123,7 +122,7 @@ def inventory():
         write_csv(CSV_FILE, data)
         return redirect(url_for('inventory'))
 
-    # Support for Edit feature (PR #13)
+    # Render with empty edit_item for normal view
     return render_template('inventory.html', items=items, edit_item=None)
 
 @app.route('/edit_product/<item_id>')
@@ -140,6 +139,16 @@ def delete_item(item_id):
     data = [item for item in data if item['id'] != item_id]
     write_csv(CSV_FILE, data)
     return redirect(url_for('inventory'))
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return "Dashboard Placeholder"  # Simplified for now
+
+@app.route('/billing')
+@login_required
+def billing():
+    return "Billing Placeholder"
 
 if __name__ == '__main__':
     with app.app_context():
