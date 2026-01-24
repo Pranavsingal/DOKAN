@@ -3,22 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dokan: Your Digital Dukaan</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <title>Dokan</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <header>
-    <h1>Dokan: Your Digital Dukaan</h1>
-    <nav>
-      <a href="{{ url_for('inventory') }}">Inventory</a>
-      <a href="{{ url_for('billing') }}">Billing</a>
-      <a href="{{ url_for('dashboard') }}">Dashboard</a>
-      <a href="{{ url_for('feedback') }}">Feedback</a>
-    </nav>
+
+<body class="bg-gray-100 min-h-screen">
+
+  {% if current_user.is_authenticated %}
+  <header class="bg-white shadow-md">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+
+      <h1 class="text-2xl font-bold text-green-600">🛍️ Dokan</h1>
+
+      <nav class="space-x-6 text-sm font-medium">
+        <a href="" class="hover:text-green-600">Inventory</a>
+        <a href="" class="hover:text-green-600">Billing</a>
+        <a href="" class="hover:text-green-600">Dashboard</a>
+        <a href="{{ url_for('logout') }}" class="text-red-500 hover:text-red-600">Logout</a>
+      </nav>
+
+    </div>
   </header>
-  <main>
-    {% block content %}
-    {% endblock %}
+  {% endif %}
+
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    {% block content %}{% endblock %}
   </main>
+
 </body>
 </html>

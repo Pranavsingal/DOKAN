@@ -1,22 +1,49 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Register - Dokan</title>
-    <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; padding-top: 50px; }
-        form { border: 1px solid #ccc; padding: 20px; border-radius: 5px; width: 300px; }
-        input { width: 100%; margin-bottom: 10px; padding: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; cursor: pointer; }
-        button:hover { background: #0069d9; }
-    </style>
-</head>
-<body>
-    <form method="POST">
-        <h2>Register</h2>
-        <input type="text" name="username" placeholder="Choose a Username" required>
-        <input type="password" name="password" placeholder="Choose a Password" required>
-        <button type="submit">Sign Up</button>
-        <p>Already have an account? <a href="/login">Login here</a></p>
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex justify-center items-center min-h-[75vh]">
+
+  <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg">
+
+    <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">
+      Create Your Dokan Account
+    </h2>
+
+    <form method="POST" class="space-y-4">
+
+      <input
+        type="text"
+        name="username"
+        placeholder="Choose a Username"
+        required
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg
+               focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+      <input
+        type="password"
+        name="password"
+        placeholder="Choose a Password"
+        required
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg
+               focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+      <button
+        type="submit"
+        class="w-full bg-blue-600 text-white py-2 rounded-lg
+               hover:bg-blue-700 transition duration-200">
+        Sign Up
+      </button>
+
     </form>
-</body>
-</html>
+
+    <p class="text-sm text-center mt-4 text-gray-600">
+      Already have an account?
+      <a href="{{ url_for('login') }}"
+         class="text-blue-600 font-semibold hover:underline">
+        Login here
+      </a>
+    </p>
+
+  </div>
+</div>
+{% endblock %}
