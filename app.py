@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import csv
+import os
+from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -10,6 +12,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 db = SQLAlchemy(app)
 
 CSV_FILE = 'data/inventory.csv'
+TRANSACTIONS_FILE = 'data/transactions.csv'
 
 # --- 1. Login Setup ---
 login_manager = LoginManager()
@@ -91,7 +94,6 @@ def inventory():
     items = read_csv(CSV_FILE)
 
     if request.method == 'POST':
-        # Validation Logic
         try:
             stock = int(request.form['stock'])
             price = float(request.form['price'])
@@ -110,19 +112,17 @@ def inventory():
             'supplier': request.form['supplier']
         }
 
-        # Edit/Update Logic
         data = read_csv(CSV_FILE)
         for i, row in enumerate(data):
             if row['id'] == item['id']:
-                data[i] = item  # Update existing
+                data[i] = item 
                 break
         else:
-            data.append(item)   # Add new
+            data.append(item)
         
         write_csv(CSV_FILE, data)
         return redirect(url_for('inventory'))
 
-    # Render with empty edit_item for normal view
     return render_template('inventory.html', items=items, edit_item=None)
 
 @app.route('/edit_product/<item_id>')
@@ -143,12 +143,62 @@ def delete_item(item_id):
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return "Dashboard Placeholder"  # Simplified for now
+    return "Dashboard Placeholder"
 
+# --- UPDATED BILLING ROUTE ---
 @app.route('/billing')
 @login_required
 def billing():
-    return "Billing Placeholder"
+    # Now passing the actual inventory to the template!
+    items = read_csv(CSV_FILE)
+    return render_template('billing.html', items=items)
+
+# --- NEW CHECKOUT API (Fixes the Bug) ---
+@app.route('/api/checkout', methods=['POST'])
+@login_required
+def checkout():
+    try:
+        data = request.get_json()
+        cart_items = data.get('items', [])
+        
+        inventory = read_csv(CSV_FILE)
+        transactions = []
+        
+        # Update Inventory Logic
+        for cart_item in cart_items:
+            item_name = cart_item['name']
+            qty_sold = int(cart_item['qty'])
+            
+            for product in inventory:
+                if product['name'] == item_name:
+                    current_stock = float(product['stock'])
+                    new_stock = max(0, current_stock - qty_sold)
+                    product['stock'] = str(int(new_stock))
+                    
+                    transactions.append({
+                        'transaction_id': datetime.now().strftime("%Y%m%d%H%M%S"),
+                        'item_id': product['id'],
+                        'quantity': qty_sold,
+                        'date': datetime.now().strftime("%Y-%m-%d")
+                    })
+                    break
+        
+        write_csv(CSV_FILE, inventory)
+        
+        # Log Transactions
+        file_exists = os.path.isfile(TRANSACTIONS_FILE)
+        with open(TRANSACTIONS_FILE, mode='a', newline='') as f:
+            fieldnames = ['transaction_id', 'item_id', 'quantity', 'date']
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            if not file_exists:
+                writer.writeheader()
+            writer.writerows(transactions)
+
+        return jsonify({"status": "success", "message": "Inventory updated successfully!"})
+
+    except Exception as e:
+        print(f"Checkout Error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
     with app.app_context():

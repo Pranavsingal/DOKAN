@@ -1,6 +1,6 @@
 id,name,category,stock,price,expiry_date,supplier
 1,Milk,Dairy,100,40.02,2025-12-01,DairyFarm
-2,Shampoo,Personal Care,50,150,2026-01-15,XYZ Company
+2,Shampoo,Personal Care,39,150,2026-01-15,XYZ Company
 3,Rice,Grains,200,60,2025-08-01,Farmers Supply
 4,Cheese,Dairy,30,200,2025-06-01,DairyFarm
 5,Butter,Dairy,80,120,2025-07-15,DairyFarm

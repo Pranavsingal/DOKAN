@@ -44,8 +44,7 @@
                 </tr>
             </thead>
             <tbody id="billBody">
-                <!-- Rows will be added here -->
-            </tbody>
+                </tbody>
         </table>
         <div class="total-row">
             Total: ₹<span id="billTotal">0.00</span>
@@ -55,34 +54,16 @@
         </div>
     </div>
     <script>
-        // Hardcoded inventory from your CSV
-        let inventory = [
-            {
-                id: "2",
-                name: "Shampoo",
-                category: "Personal Care",
-                stock: 50,
-                price: 150,
-                expiry_date: "2026-01-15",
-                supplier: "XYZ Company"
-            },
-            {
-                id: "3",
-                name: "Rice",
-                category: "Grains",
-                stock: 200,
-                price: 60,
-                expiry_date: "2025-08-01",
-                supplier: "Farmers Supply"
-            }
-        ];
+        // --- FIX 1: Load Inventory Dynamically from Flask ---
+        // This takes the 'items' variable passed from app.py and converts it to JSON
+        let inventory = {{ items | tojson }};
 
         function addItemRow() {
             const tbody = document.getElementById('billBody');
             const row = tbody.insertRow();
             const idx = tbody.rows.length;
 
-            row.insertCell(0).innerText = idx + 1;
+            row.insertCell(0).innerText = idx;
 
             // Item dropdown
             let itemCell = row.insertCell(1);
@@ -116,6 +97,7 @@
                 const invItem = inventory.find(x => x.name === itemSelect.value);
                 if (invItem && Number(qtyInput.value) > Number(invItem.stock)) {
                     qtyInput.value = invItem.stock;
+                    alert("Max stock reached!");
                 }
                 updateTotal();
             };
@@ -167,26 +149,61 @@
             }
             document.getElementById('billTotal').innerText = total.toFixed(2);
         }
+
+        // --- FIX 2: Connect to Python Backend ---
         function generateBill() {
-            // Check for stock and update inventory
             const tbody = document.getElementById('billBody');
+            let cartItems = [];
+
+            // Scrape data from the HTML Table
             for (let i = 0; i < tbody.rows.length; i++) {
-                let itemName = tbody.rows[i].cells[1].firstChild.value;
-                let qty = parseFloat(tbody.rows[i].cells[2].firstChild.value) || 0;
-                let invItem = inventory.find(x => x.name === itemName);
-                if (invItem) {
-                    if (qty > Number(invItem.stock)) {
-                        alert(`Not enough stock for item: ${itemName}`);
-                        return;
-                    }
-                    invItem.stock = Number(invItem.stock) - qty;
+                let row = tbody.rows[i];
+                let selectElement = row.cells[1].firstChild;
+                let qtyElement = row.cells[2].firstChild;
+                
+                let itemName = selectElement.value;
+                let qty = parseFloat(qtyElement.value) || 0;
+                
+                if (!itemName || itemName === "") {
+                    alert(`Row ${i+1}: Please select an item.`);
+                    return;
                 }
+                if (qty <= 0) {
+                    alert(`Row ${i+1}: Quantity must be greater than 0.`);
+                    return;
+                }
+
+                cartItems.push({ name: itemName, qty: qty });
             }
-            alert("Bill generated and inventory updated!");
-            updateAllItemDropdowns();
+
+            if (cartItems.length === 0) {
+                alert("Cart is empty!");
+                return;
+            }
+
+            // Send Data to Python Backend
+            fetch('/api/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: cartItems })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    alert("✅ Success! Inventory updated.");
+                    location.reload(); // Reload to get fresh stock data
+                } else {
+                    alert("❌ Error: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("❌ Failed to communicate with server.");
+            });
         }
 
         function updateAllItemDropdowns() {
+            // Not needed as much since we reload page, but good for keeping selection logic
             const tbody = document.getElementById('billBody');
             for (let i = 0; i < tbody.rows.length; i++) {
                 let itemCell = tbody.rows[i].cells[1];
@@ -220,7 +237,6 @@
             URL.revokeObjectURL(url);
         }
 
-        // Add one row by default
         window.onload = function() {
             addItemRow();
         }
