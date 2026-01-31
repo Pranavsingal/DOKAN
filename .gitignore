@@ -3,4 +3,4 @@ __pycache__/
 instance/
 .pytest_cache/
 .venv/
-env/
+env/__pycache__/
