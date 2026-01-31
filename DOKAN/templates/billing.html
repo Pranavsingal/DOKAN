@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dokan Billing with Inventory</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #fffbe9; }
+        .header { background: #ffd600; padding: 30px 0 10px 0; text-align: center; color: #444; font-size: 2em; font-weight: bold; letter-spacing: 1px; }
+        .container { max-width: 650px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 16px #ffd60044; padding: 30px 30px 20px 30px; }
+        .input-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        .input-row input, .input-row select { flex: 1; padding: 8px; border: 1px solid #ffe082; border-radius: 5px; font-size: 1em; }
+        .input-row button { background: #ffd600; color: #444; border: none; border-radius: 5px; padding: 8px 18px; font-size: 1em; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        .input-row button:hover { background: #f9a825; color: #fff; }
+        .bill-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .bill-table th, .bill-table td { border: 1px solid #ffe082; padding: 7px 6px; text-align: center; }
+        .bill-table th { background: #fffde7; color: #444; font-weight: 600; }
+        .bill-table td input, .bill-table td select { width: 90%; padding: 3px; border: 1px solid #ffe082; border-radius: 3px; text-align: center; }
+        .remove-btn { background: #e74c3c; color: #fff; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-size: 1em; }
+        .remove-btn:hover { background: #c0392b; }
+        .total-row { text-align: right; font-weight: bold; font-size: 1.1em; color: #222; margin-bottom: 10px; }
+        @media print {
+            .input-row, .remove-btn, button, .total-row button { display: none !important; }
+            .header, .container, .bill-table { box-shadow: none; }
+            body { background: #fff; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">Dokan: Your Digital Dukaan</div>
+    <div class="container">
+        <div class="input-row">
+            <input type="text" id="customerName" placeholder="Enter customer name">
+            <button onclick="addItemRow()">+ Add Item</button>
+        </div>
+        <table class="bill-table" id="billTable">
+            <thead>
+                <tr>
+                    <th>S.No</th>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Price (₹)</th>
+                    <th>Stock</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="billBody">
+                <!-- Rows will be added here -->
+            </tbody>
+        </table>
+        <div class="total-row">
+            Total: ₹<span id="billTotal">0.00</span>
+            <button style="margin-left:20px;" onclick="generateBill()">Generate Bill</button>
+            <button style="margin-left:10px;" onclick="window.print()">🖨️ Print Bill</button>
+            <button style="margin-left:10px;" onclick="downloadInventory()">Download Inventory CSV</button>
+        </div>
+    </div>
+    <script>
+        // Hardcoded inventory from your CSV
+        let inventory = [
+            {
+                id: "2",
+                name: "Shampoo",
+                category: "Personal Care",
+                stock: 50,
+                price: 150,
+                expiry_date: "2026-01-15",
+                supplier: "XYZ Company"
+            },
+            {
+                id: "3",
+                name: "Rice",
+                category: "Grains",
+                stock: 200,
+                price: 60,
+                expiry_date: "2025-08-01",
+                supplier: "Farmers Supply"
+            }
+        ];
+
+        function addItemRow() {
+            const tbody = document.getElementById('billBody');
+            const row = tbody.insertRow();
+            const idx = tbody.rows.length;
+
+            row.insertCell(0).innerText = idx + 1;
+
+            // Item dropdown
+            let itemCell = row.insertCell(1);
+            let itemSelect = document.createElement('select');
+            itemSelect.innerHTML = '<option value="">Select item</option>';
+            inventory.forEach(item => {
+                itemSelect.innerHTML += `<option value="${item.name}">${item.name}</option>`;
+            });
+            itemSelect.onchange = function() {
+                const invItem = inventory.find(x => x.name === itemSelect.value);
+                if (invItem) {
+                    priceInput.value = invItem.price;
+                    stockCell.innerText = invItem.stock;
+                    qtyInput.max = invItem.stock;
+                } else {
+                    priceInput.value = 0;
+                    stockCell.innerText = '-';
+                    qtyInput.max = '';
+                }
+                updateTotal();
+            };
+            itemCell.appendChild(itemSelect);
+
+            // Qty
+            let qtyCell = row.insertCell(2);
+            let qtyInput = document.createElement('input');
+            qtyInput.type = "number";
+            qtyInput.value = 1;
+            qtyInput.min = 1;
+            qtyInput.oninput = function() {
+                const invItem = inventory.find(x => x.name === itemSelect.value);
+                if (invItem && Number(qtyInput.value) > Number(invItem.stock)) {
+                    qtyInput.value = invItem.stock;
+                }
+                updateTotal();
+            };
+            qtyCell.appendChild(qtyInput);
+
+            // Price
+            let priceCell = row.insertCell(3);
+            let priceInput = document.createElement('input');
+            priceInput.type = "number";
+            priceInput.value = 0;
+            priceInput.min = 0;
+            priceInput.step = "0.01";
+            priceInput.readOnly = true;
+            priceCell.appendChild(priceInput);
+
+            // Stock display
+            let stockCell = row.insertCell(4);
+            stockCell.innerText = '-';
+
+            // Remove Button
+            let actCell = row.insertCell(5);
+            let rmBtn = document.createElement('button');
+            rmBtn.innerText = "✖";
+            rmBtn.className = "remove-btn";
+            rmBtn.onclick = function() {
+                tbody.removeChild(row);
+                updateRowNumbers();
+                updateTotal();
+            };
+            actCell.appendChild(rmBtn);
+
+            updateRowNumbers();
+            updateTotal();
+        }
+
+        function updateRowNumbers() {
+            const tbody = document.getElementById('billBody');
+            for (let i = 0; i < tbody.rows.length; i++) {
+                tbody.rows[i].cells[0].innerText = i + 1;
+            }
+        }
+        function updateTotal() {
+            const tbody = document.getElementById('billBody');
+            let total = 0;
+            for (let i = 0; i < tbody.rows.length; i++) {
+                let qty = parseFloat(tbody.rows[i].cells[2].firstChild.value) || 0;
+                let price = parseFloat(tbody.rows[i].cells[3].firstChild.value) || 0;
+                total += price * qty;
+            }
+            document.getElementById('billTotal').innerText = total.toFixed(2);
+        }
+        function generateBill() {
+            // Check for stock and update inventory
+            const tbody = document.getElementById('billBody');
+            for (let i = 0; i < tbody.rows.length; i++) {
+                let itemName = tbody.rows[i].cells[1].firstChild.value;
+                let qty = parseFloat(tbody.rows[i].cells[2].firstChild.value) || 0;
+                let invItem = inventory.find(x => x.name === itemName);
+                if (invItem) {
+                    if (qty > Number(invItem.stock)) {
+                        alert(`Not enough stock for item: ${itemName}`);
+                        return;
+                    }
+                    invItem.stock = Number(invItem.stock) - qty;
+                }
+            }
+            alert("Bill generated and inventory updated!");
+            updateAllItemDropdowns();
+        }
+
+        function updateAllItemDropdowns() {
+            const tbody = document.getElementById('billBody');
+            for (let i = 0; i < tbody.rows.length; i++) {
+                let itemCell = tbody.rows[i].cells[1];
+                let oldSelect = itemCell.firstChild;
+                let selected = oldSelect.value;
+                let newSelect = document.createElement('select');
+                newSelect.innerHTML = '<option value="">Select item</option>';
+                inventory.forEach(item => {
+                    newSelect.innerHTML += `<option value="${item.name}"${item.name === selected ? ' selected' : ''}>${item.name}</option>`;
+                });
+                newSelect.onchange = oldSelect.onchange;
+                itemCell.replaceChild(newSelect, oldSelect);
+            }
+        }
+
+        function downloadInventory() {
+            const headers = ["id","name","category","stock","price","expiry_date","supplier"];
+            const lines = [headers.join(",")];
+            inventory.forEach(row => {
+                lines.push(headers.map(h => row[h]).join(","));
+            });
+            const csv = lines.join("\n");
+            const blob = new Blob([csv], {type: 'text/csv'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'updated_inventory.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Add one row by default
+        window.onload = function() {
+            addItemRow();
+        }
+    </script>
+</body>
+</html>

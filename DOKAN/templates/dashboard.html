@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>📊 Dashboard</h2>
+
+<div class="card">
+  <h3>Sales Forecast</h3>
+{% if sales_forecast %}
+  <ul>
+    {% for product, predicted_sales in sales_forecast.items() %}
+      <li>{{ product }}: Forecasted sales = {{ predicted_sales }}</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No sales forecast available.</p>
+{% endif %}
+
+</div>
+
+<div class="card">
+  <h3>Stockout Predictions</h3>
+{% if stockout_predictions %}
+  <ul>
+    {% for stockout in stockout_predictions %}
+      <li>{{ stockout.item }}: Stockout in {{ stockout.days_until_stockout }} days</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No stockout predictions available.</p>
+{% endif %}
+  <ul>
+    {% for stockout in stockout_predictions %}
+      <li><strong>{{ stockout.item }}</strong>: Stockout in {{ stockout.days_until_stockout }} days</li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div class="card">
+  <h3>Product Recommendations</h3>
+    {% if suggestions %}
+  <ul>
+    {% for suggestion in suggestions %}
+      <li>{{ suggestion.item }}: Recommended with {{ suggestion.recommended_items | join(', ') }}</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No recommendations available.</p>
+{% endif %}
+  <ul>
+    {% for recommendation in recommendations %}
+      <li><strong>{{ recommendation.item }}</strong>: Recommended with {{ recommendation.recommended_items }}</li>
+    {% endfor %}
+  </ul>
+</div>
+
+{% endblock %}

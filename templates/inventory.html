@@ -2,20 +2,18 @@
 
 {% block content %}
 
-<!-- Add New Product / Update Existing Product -->
-<form method="POST">
+<form action="{{ url_for('add_product') }}" method="POST">
   <h2>🛒 Inventory Management</h2>
-  <input type="text" name="id" placeholder="Product ID" required>
+  <input type="text" name="id" placeholder="Product ID (Optional)" >
   <input type="text" name="name" placeholder="Product Name" required>
   <input type="text" name="category" placeholder="Category" required>
   <input type="number" name="stock" placeholder="Stock" required>
-  <input type="number" name="price" placeholder="Price" required>
+  <input type="number" name="price" step="0.01" placeholder="Price" required>
   <input type="date" name="expiry_date" placeholder="Expiry Date">
   <input type="text" name="supplier" placeholder="Supplier" required>
   <button type="submit">+ Add Product</button>
 </form>
 
-<!-- Display Inventory -->
 <table>
   <h2>Current Inventory</h2>
   <thead>
@@ -31,21 +29,19 @@
     </tr>
   </thead>
   <tbody>
-    {% for item in items %}
+    {% for product in products %}
     <tr>
-      <td>{{ item.id }}</td>
-      <td>{{ item.name }}</td>
-      <td>{{ item.category }}</td>
-      <td>{{ item.stock }}</td>
-      <td>{{ item.price }}</td>
-      <td>{{ item.expiry_date }}</td>
-      <td>{{ item.supplier }}</td>
-      <td><a href="{{ url_for('delete_item', item_id=item.id) }}">Delete</a></td>
+      <td>{{ product.id }}</td>
+      <td>{{ product.name }}</td>
+      <td>{{ product.category }}</td>
+      <td>{{ product.stock }}</td>
+      <td>{{ product.price }}</td>
+      <td>{{ product.expiry_date }}</td>
+      <td>{{ product.supplier }}</td>
+      <td><a href="{{ url_for('delete_item', item_id=product.id) }}">Delete</a></td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
-
-
 
 {% endblock %}

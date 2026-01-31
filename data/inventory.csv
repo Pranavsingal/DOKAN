@@ -14,3 +14,4 @@ id,name,category,stock,price,expiry_date,supplier
 13,Tea,Beverages,150,60,2025-09-01,Tea Leaves Co.
 14,Flour,Grains,200,45,2025-12-01,Farmers Supply
 15,Vegetables,Groceries,50,30,2025-08-15,Fresh Produce
+54,dfghd,sdgg,12,-100,,DairyFarm

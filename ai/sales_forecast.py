@@ -1,40 +1,42 @@
 import pandas as pd
 from sklearn.linear_model import LinearRegression
-from datetime import datetime, timedelta
 import numpy as np
+import sqlite3
+import os
 
-def predict_sales(items):
-    sales_df = pd.read_csv('data/sales.csv')
-    predictions = {}
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = os.path.join(BASE_DIR, 'instance', 'dokan.db')
 
-    # Assume past 3 days of data
-    forecast_days = 3
-    cutoff_date = pd.to_datetime(sales_df['date'].max()) - timedelta(days=forecast_days)
+def forecast_sales(days=7):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        # Query the SalesRecord table which matches sales.csv
+        query = "SELECT date, sales FROM sales_record"
+        df = pd.read_sql(query, conn)
+        conn.close()
 
-    for item in items:
-        item_id = str(item['id'])
-        item_sales = sales_df[sales_df['item_id'].astype(str) == item_id]
+        if df.empty: return {}
 
-        if item_sales.empty:
-            predictions[item['name']] = 0
-            continue
-
-        # Prepare training data: use index as pseudo "day"
-        item_sales['date'] = pd.to_datetime(item_sales['date'])
-        item_sales = item_sales.sort_values(by='date')
-
-        x = np.arange(len(item_sales)).reshape(-1, 1)
-        y = item_sales['sales'].values
-
-        if len(x) < 2:
-            predictions[item['name']] = int(np.mean(y))  # fallback
-            continue
+        # Preprocessing
+        df['date'] = pd.to_datetime(df['date'])
+        # Group by date to get total sales per day across all items
+        df_daily = df.groupby('date')['sales'].sum().reset_index()
+        
+        df_daily['date_ordinal'] = df_daily['date'].map(pd.Timestamp.toordinal)
 
         model = LinearRegression()
-        model.fit(x, y)
-        next_day = [[len(x)]]
-        prediction = model.predict(next_day)[0]
+        model.fit(df_daily[['date_ordinal']], df_daily['sales'])
 
-        predictions[item['name']] = max(int(round(prediction)), 0)
-
-    return predictions
+        last_date = df_daily['date'].max()
+        future_dates = [last_date + pd.Timedelta(days=i) for i in range(1, days + 1)]
+        future_ordinal = np.array([d.toordinal() for d in future_dates]).reshape(-1, 1)
+        
+        predictions = model.predict(future_ordinal)
+        
+        return {
+            "dates": [d.strftime('%Y-%m-%d') for d in future_dates],
+            "sales": [round(p, 2) for p in predictions]
+        }
+    except Exception as e:
+        print(f"Prediction Error: {e}")
+        return {}

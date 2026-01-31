@@ -1,0 +1,17 @@
+id,name,category,stock,price,expiry_date,supplier
+1,Milk,Dairy,100,40,2025-12-01,DairyFarm
+2,Shampoo,Personal Care,50,150,2026-01-15,XYZ Company
+3,Rice,Grains,200,60,2025-08-01,Farmers Supply
+4,Cheese,Dairy,30,200,2025-06-01,DairyFarm
+5,Butter,Dairy,80,120,2025-07-15,DairyFarm
+6,Toothpaste,Personal Care,150,80,2026-03-01,ABC Corp
+7,Soap,Personal Care,200,50,2026-05-01,XYZ Company
+8,Wheat,Grains,100,55,2025-09-01,Farmers Supply
+9,Oats,Grains,180,80,2025-10-01,Organic Foods
+10,Coffee,Groceries,70,250,2025-07-30,Coffee World
+11,Sugar,Groceries,300,50,2025-12-15,Sugar Inc.
+12,Juice,Beverages,100,120,2025-11-01,Fruit World
+13,Tea,Beverages,150,60,2025-09-01,Tea Leaves Co.
+14,Flour,Grains,200,45,2025-12-01,Farmers Supply
+15,Vegetables,Groceries,50,30,2025-08-15,Fresh Produce
+54,dfghd,sdgg,12,-100,,DairyFarm
