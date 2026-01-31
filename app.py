@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import csv
+from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -10,6 +11,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 db = SQLAlchemy(app)
 
 CSV_FILE = 'data/inventory.csv'
+TRANSACTIONS_FILE = 'data/transactions.csv'
 
 # --- 1. Login Setup ---
 login_manager = LoginManager()
@@ -148,7 +150,90 @@ def dashboard():
 @app.route('/billing')
 @login_required
 def billing():
-    return "Billing Placeholder"
+    return render_template('billing.html')
+
+
+@app.route('/api/inventory')
+@login_required
+def api_inventory():
+    """API endpoint to get inventory data for billing page"""
+    items = read_csv(CSV_FILE)
+    return jsonify(items)
+
+
+@app.route('/api/checkout', methods=['POST'])
+@login_required
+def api_checkout():
+    """
+    API endpoint to process checkout:
+    - Updates inventory.csv (decreases stock)
+    - Logs sale in transactions.csv
+    """
+    try:
+        data = request.get_json()
+        items = data.get('items', [])
+        customer_name = data.get('customer_name', 'Unknown')
+        
+        if not items:
+            return jsonify({'success': False, 'error': 'No items in cart'}), 400
+        
+        # Read current inventory
+        inventory = read_csv(CSV_FILE)
+        
+        # Validate stock availability first
+        for cart_item in items:
+            item_id = str(cart_item.get('id'))
+            qty = int(cart_item.get('qty', 0))
+            
+            inv_item = next((i for i in inventory if str(i['id']) == item_id), None)
+            if not inv_item:
+                return jsonify({'success': False, 'error': f'Item ID {item_id} not found'}), 400
+            
+            if int(inv_item['stock']) < qty:
+                return jsonify({'success': False, 'error': f'Not enough stock for {inv_item["name"]}'}), 400
+        
+        # Generate new transaction ID
+        transactions = read_csv(TRANSACTIONS_FILE)
+        if transactions:
+            max_trans_id = max(int(t['transaction_id']) for t in transactions)
+            new_trans_id = max_trans_id + 1
+        else:
+            new_trans_id = 1
+        
+        # Update inventory and create transaction records
+        new_transactions = []
+        for cart_item in items:
+            item_id = str(cart_item.get('id'))
+            qty = int(cart_item.get('qty', 0))
+            
+            # Update inventory stock
+            for inv_item in inventory:
+                if str(inv_item['id']) == item_id:
+                    inv_item['stock'] = int(inv_item['stock']) - qty
+                    break
+            
+            # Add transaction record (one per item in the bill)
+            new_transactions.append({
+                'transaction_id': new_trans_id,
+                'item_id': item_id
+            })
+        
+        # Write updated inventory
+        write_csv(CSV_FILE, inventory)
+        
+        # Append new transactions
+        transactions.extend(new_transactions)
+        write_csv(TRANSACTIONS_FILE, transactions)
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Checkout successful',
+            'transaction_id': new_trans_id
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     with app.app_context():

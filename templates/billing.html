@@ -55,27 +55,23 @@
         </div>
     </div>
     <script>
-        // Hardcoded inventory from your CSV
-        let inventory = [
-            {
-                id: "2",
-                name: "Shampoo",
-                category: "Personal Care",
-                stock: 50,
-                price: 150,
-                expiry_date: "2026-01-15",
-                supplier: "XYZ Company"
-            },
-            {
-                id: "3",
-                name: "Rice",
-                category: "Grains",
-                stock: 200,
-                price: 60,
-                expiry_date: "2025-08-01",
-                supplier: "Farmers Supply"
+        // Load inventory from backend API
+        let inventory = [];
+
+        async function loadInventory() {
+            try {
+                const response = await fetch('/api/inventory');
+                if (response.ok) {
+                    inventory = await response.json();
+                    // Update any existing dropdowns
+                    updateAllItemDropdowns();
+                } else {
+                    console.error('Failed to load inventory');
+                }
+            } catch (error) {
+                console.error('Error loading inventory:', error);
             }
-        ];
+        }
 
         function addItemRow() {
             const tbody = document.getElementById('billBody');
@@ -167,23 +163,69 @@
             }
             document.getElementById('billTotal').innerText = total.toFixed(2);
         }
-        function generateBill() {
-            // Check for stock and update inventory
+        
+        async function generateBill() {
             const tbody = document.getElementById('billBody');
+            const customerName = document.getElementById('customerName').value || 'Unknown';
+            
+            // Collect items from the bill
+            let cartItems = [];
             for (let i = 0; i < tbody.rows.length; i++) {
                 let itemName = tbody.rows[i].cells[1].firstChild.value;
                 let qty = parseFloat(tbody.rows[i].cells[2].firstChild.value) || 0;
+                
+                if (!itemName || qty <= 0) continue;
+                
                 let invItem = inventory.find(x => x.name === itemName);
                 if (invItem) {
                     if (qty > Number(invItem.stock)) {
                         alert(`Not enough stock for item: ${itemName}`);
                         return;
                     }
-                    invItem.stock = Number(invItem.stock) - qty;
+                    cartItems.push({
+                        id: invItem.id,
+                        name: invItem.name,
+                        qty: qty,
+                        price: invItem.price
+                    });
                 }
             }
-            alert("Bill generated and inventory updated!");
-            updateAllItemDropdowns();
+            
+            if (cartItems.length === 0) {
+                alert('Please add items to the bill');
+                return;
+            }
+            
+            // Send checkout request to backend
+            try {
+                const response = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customer_name: customerName,
+                        items: cartItems
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`Bill generated successfully! Transaction ID: ${result.transaction_id}`);
+                    // Reload inventory to get updated stock values
+                    await loadInventory();
+                    // Clear the bill table
+                    tbody.innerHTML = '';
+                    addItemRow();
+                    updateTotal();
+                } else {
+                    alert(`Error: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Checkout error:', error);
+                alert('Failed to process checkout. Please try again.');
+            }
         }
 
         function updateAllItemDropdowns() {
@@ -220,8 +262,9 @@
             URL.revokeObjectURL(url);
         }
 
-        // Add one row by default
-        window.onload = function() {
+        // Load inventory and add one row by default
+        window.onload = async function() {
+            await loadInventory();
             addItemRow();
         }
     </script>
